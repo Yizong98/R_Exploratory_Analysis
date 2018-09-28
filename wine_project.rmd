@@ -1,0 +1,791 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+---
+Wine Data Exploration by Yijian Zong
+========================================================
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
+# Load all of the packages that you end up using in your analysis in this code
+# chunk.
+
+# Notice that the parameter "echo" was set to FALSE for this code chunk. This
+# prevents the code from displaying in the knitted HTML output. You should set
+# echo=FALSE for all code chunks in your file, unless it makes sense for your
+# report to show the code that generated a particular plot.
+
+# The other parameters for "message" and "warning" should also be set to FALSE
+# for other code chunks once you have verified that each plot comes out as you
+# want it to. This will clean up the flow of your report.
+library(knitr)
+library(ggplot2)
+library(gridExtra)
+library(RColorBrewer)
+library(psych)
+knitr::opts_chunk$set(fig.width=9,fig.height=6,fig.path='Figs/',
+                      fig.align='center',tidy=TRUE,
+                      echo=FALSE,warning=FALSE,message=FALSE)
+```
+
+## reading data
+```{r echo=FALSE, Load_the_Data}
+# Load the Data
+setwd("C:/Users/yizong/Downloads")
+wine <- read.csv('wineQualityReds.csv')
+
+```
+
+
+This dataset includes information about red wines such as density, PH, and corr
+esponding quality score.
+
+# Univariate Plots Section
+
+
+## Variable Check
+```{r echo=FALSE, Univariate_Plots}
+str(wine)
+```
+
+```{r echo=FALSE, Univariate_Plots2}
+dim(wine)
+```
+
+Our dataset consists of 13 variables, with almost 1600 observations. 
+
+## Summary of data
+
+First, I added one more variable quality.f as a factor variable for quality
+for the ease of analysis.
+
+```{r echo=FALSE, Univariate_Plots3}
+wine$quality.f <- factor(wine$quality)
+summary(wine)
+```
+
+Look at the summary, we know the majority of wine is in good quality. Density
+has very narrow range, which means it might not be a good predictor of quality.
+Let's explore the variables to make more useful discoveries. 
+
+Show levels of quality after factor transformation 
+
+```{r echo=FALSE, Univariate_Plots4}
+levels(wine$quality.f )
+```
+
+There are six types of quality from 3 to 8 in ascending order.
+
+## Table of wine
+
+```{r echo=FALSE, Univariate_Plots5}
+table(wine$quality)
+```
+We see that wine of quality of 5,6 have the highest frequency. 
+
+## Histogram of quality of wine 
+
+```{r echo=FALSE, Univariate_Plots6}
+qplot(x=quality.f, data=wine)+
+  scale_x_discrete(breaks=3:8)
+```
+
+As we can see, the quality is almost normally distributed, which means it is a
+good representation of population.
+
+## Name of variables
+
+```{r echo=FALSE, Univariate_Plots7}
+names(wine)
+```
+
+After addition of factor variable quality.f, now we have 14 variables.
+
+## Histogram of pH of wine faceted by quality
+```{r echo=FALSE, Univariate_Plots8}
+
+qplot(x=pH, data=wine)+
+  scale_x_discrete(breaks=3:8)+
+  facet_wrap(~quality.f,ncol=3)
+
+```
+
+After wrapping the histogram of pH by quality, we can see pH is normally 
+distributed across the quality 4,5,6,7. This means the amount of pH is not 
+affected by the wine quality in those groups.
+
+```{r echo=FALSE, Univariate_Plots9}
+qplot(x=density, data=wine)
+```
+
+Density without transformation is nearly normally distributed, which means the samples resemble the population in a large extent. 
+
+```{r echo=FALSE, Univariate_Plots10}
+qplot(x=alcohol, data=wine)
+```
+
+The alcohol distribution is right skewed, meaning that its mean is higher
+than the median. In the next step, we try to log transform it to explore 
+deeper. 
+
+```{r echo=FALSE, Univariate_Plots11}
+p1 <- qplot(x=log10(alcohol+1), data=wine)
+p2 <- qplot(x=sqrt(alcohol), data=wine)
+
+grid.arrange(p1,p2,ncol=1)
+```
+
+As we see, even after the transformation of scale, alcohol is still right skewed
+.
+
+```{r echo=FALSE, Univariate_Plots13}
+qplot(x=residual.sugar, data=wine, binwidth=2)+
+  scale_x_continuous(limits = c(1,18))
+```
+
+The histogram of residual sugar is also right skewed, just like alcohol. 
+
+```{r echo=FALSE, Univariate_Plots14}
+qplot(x=residual.sugar, data=wine, binwidth=0.1)+
+  scale_x_continuous(limits = c(1,18),breaks=seq(0,16,1))
+  
+```
+
+
+```{r echo=FALSE, Univariate_Plots15}
+summary(wine$residual.sugar)
+  
+```
+
+The summary justifies the plot and the outlier 15.5 drags the mean higher than 
+the median. 
+
+After plotting the data with different bins width, 
+we can see most of the residual sugar lie between 1 and 3, with a median of 2.2. 
+
+```{r echo=FALSE, Univariate_Plots16}
+qplot(x=residual.sugar, data=subset(wine,wine$residual.sugar<15.5), binwidth=2)+
+  scale_x_continuous(limits = c(1,18))
+```
+After trimming the highest residual sugar, we can see the plot is still very similar to the above plot. 
+
+```{r echo=FALSE, Univariate_Plots17}
+qplot(x=free.sulfur.dioxide, data=wine)
+```
+
+The histogram of free sulfur dioxide is right skewed. 
+
+```{r echo=FALSE, Univariate_Plots18}
+qplot(x=total.sulfur.dioxide, data=wine)
+```
+
+The histogram of total sulfur dioxide is right skewed. 
+
+```{r echo=FALSE, Univariate_Plots20}
+summary(wine$total.sulfur.dioxide)
+```
+
+As we see, the highest of total sulfur dioxide is 289, yet the median is only
+38.00, thus creating a right skewed distribution.
+
+```{r echo=FALSE, Univariate_Plots21}
+qplot(x=log(total.sulfur.dioxide+1), data=wine,binwidth=0.25)
+```
+
+After log transformation, we now see the pattern, total sulfur dioxide has a 
+bimodal distribution, cluttered on 3.25 and 3.75.
+
+```{r echo=FALSE, Univariate_Plots22}
+qplot(x=log(free.sulfur.dioxide+1), data=wine,binwidth=0.25)
+```
+
+The very similar distribution is observed after making a log transformation
+to free sulfur dioxide.
+
+```{r echo=FALSE, Univariate_Plots23}
+qplot(x=log(free.sulfur.dioxide+1), data=wine,binwidth=0.01)
+```
+
+After shrinking the binwidth, we can see most wine cluttered around 2 in the 
+scale of log of free sulfur dioxide.
+
+```{r echo=FALSE, Univariate_Plots24}
+qplot(x=log(free.sulfur.dioxide+1), data=wine,binwidth=0.25)+
+  scale_x_continuous(limits = c(0,5), breaks= seq(0,5,0.2))
+```
+
+```{r echo=FALSE, Univariate_Plots25}
+qplot(x=log(total.sulfur.dioxide+1), data=wine,binwidth=0.25)+
+  scale_x_continuous(limits = c(0,6), breaks= seq(0,6,0.3))
+```
+
+```{r echo=FALSE, Univariate_Plots26}
+qplot(x=log(total.sulfur.dioxide+1), data=wine,binwidth=0.01)
+```
+
+Transform the long tail data to understand distribution of free and total 
+sulfur dioxide.  After adding limit and breaks, we can see for the total free 
+dioxide, it peaks around 3.15 and 3.9 while there is a gap between 5.1 and 5.7. 
+I wonder there might be a relationship between the gaps in both graphs. 
+
+
+```{r echo=FALSE, Univariate_Plots27}
+qplot(x=total.sulfur.dioxide, data=subset(wine,wine$quality=='8'),binwidth=0.25)+
+  ggtitle("Best Quality total sulfur dioxide distribution")
+```
+
+Most wine have total sulfur dioxide between 0 and 25.
+
+```{r echo=FALSE, Univariate_Plots28}
+summary(wine$quality=='8')
+```
+
+We can see there are 18 wine that have the highest quality in our data.
+
+
+```{r echo=FALSE, Univariate_Plots29}
+summary(subset(wine$total.sulfur.dioxide, wine$quality=='3'))
+```
+
+This is the Worst quality total sulfur dioxide summary
+
+```{r echo=FALSE, Univariate_Plots30}
+summary(subset(wine$total.sulfur.dioxide, wine$quality=='8'))
+```
+This is the Best quality total sulfur dioxide summary. As we see the higher 
+quality wine tends to have higher total sulfur dioxide.
+
+```{r echo=FALSE, Univariate_Plots31}
+qplot(x=total.sulfur.dioxide, data=subset(wine,wine$quality=='3'),binwidth=0.25)+
+  ggtitle("Worst Quality total sulfur dioxide distribution")
+```
+
+
+```{r echo=FALSE, Univariate_Plots32}
+summary(wine$quality=='3')
+```
+
+There are 10 wines that have the worst quality.
+
+```{r echo=FALSE, Univariate_Plots33}
+qplot(x=free.sulfur.dioxide, data=subset(wine,wine$quality=='8'),binwidth=0.25)+
+  ggtitle("Best Quality free sulfur dioxide distribution")
+```
+
+Now we turn to free sulfur dioxide analysis. As we see, most wine are cluttered
+around 0 and 10, for the best quality.
+
+
+```{r echo=FALSE, Univariate_Plots34}
+summary(subset(wine$free.sulfur.dioxide, wine$quality=='8'))
+```
+
+This is Best quality free sulfur dioxide summary. 
+
+```{r echo=FALSE, Univariate_Plots35}
+summary(subset(wine$free.sulfur.dioxide, wine$quality=='3'))
+```
+
+This is Worst quality free sulfur dioxide summary
+
+```{r echo=FALSE, Univariate_Plots36}
+qplot(x=free.sulfur.dioxide, data=subset(wine,wine$quality=='3'),binwidth=0.25)+
+  ggtitle("Worst Quality free sulfur dioxide distribution")
+```
+
+It seems that the better the wine, the more free and total sulfur dioxide 
+it would have. 
+
+
+```{r echo=FALSE, Univariate_Plots37}
+qplot(x=fixed.acidity, data=wine, binwidth=0.5)
+```
+
+We can see fixed.acidity have an slightly right skewed distribution.
+
+```{r echo=FALSE, Univariate_Plots38}
+qplot(x=volatile.acidity, data=wine, binwidth=0.1)
+```
+
+The distribution of volatile acidity has a bimodal distribution.
+
+```{r echo=FALSE, Univariate_Plots39}
+qplot(x=citric.acid, data=wine, binwidth=0.05)
+```
+
+The distribution of citric acidis slightly right skewed. 
+
+```{r echo=FALSE, Univariate_Plots40}
+
+qplot(x=fixed.acidity, data=wine)+
+  facet_wrap(~quality.f,ncol=3)
+
+```
+
+After wrapping fixed.acidity by quality, we see the fixed acidity in quality of
+5 and 6 share very similar distribution. Yet, the general right skewed 
+distribution is lost in quality of 7. 
+
+```{r echo=FALSE, Univariate_Plots50}
+
+qplot(x=volatile.acidity, data=wine)+
+  facet_wrap(~quality.f,ncol=3)
+
+```
+
+After wrapping volatile.acidity by quality, we see the volatile acidity in quality of
+5, 6, and 7 share very similar distribution.
+
+```{r echo=FALSE, Univariate_Plots51}
+
+qplot(x=citric.acid, data=wine)+
+  facet_wrap(~quality.f,ncol=3)
+
+```
+
+After wrapping citric.acid by quality, we see the citric acid in quality of
+5, 6 share very similar distribution.Yet the distribution seems to be normal 
+in quality of 7.
+
+```{r echo=FALSE, Univariate_Plots52}
+qplot(x=sulphates, data=wine, binwidth=0.05)
+```
+
+The distribution of sulphates is very similar to that of fixed acidity.
+There might be an implicit connections between two.
+
+
+
+# Univariate Analysis
+
+### What is the structure of your dataset?
+
+There are 1599 wines in the dataset with 12 features(fixed.acidity, volatile.
+acidity, citric acid, residual sugar, chlorides, free.sulfur.dioxide,
+total.sulfur.dioxide,density, alcohol, sulphates, quality). One variable 
+quality is transormed into factor variable, quality.f with the following levels:
+
+(worst)___________>(best)
+Quality: 3,4,5,6,7,8
+
+Other observations:
+* There are 18 wines that have the highest quality and 10 the lowest. 
+* Mean Ph is 3.31. 
+* The distribution of sulphates is very similar to that of fixed acidity.
+* The maximum residual sugar is 15.5
+
+### What is/are the main feature(s) of interest in your dataset?
+The main features are quality and density. I like to determine what features
+determine the quality of a wine. I suspect density and some combinations
+of other variables can be used to build a predictive model to classify
+wine. 
+### What other features in the dataset do you think will help support your \
+investigation into your feature(s) of interest?
+
+density, pH, alcohol, residual sugar and total sulfur dioxide likely contribute 
+to the quality. I think density and pH and toatl sulfur dioxide contribute the
+most.
+
+
+### Did you create any new variables from existing variables in the dataset?
+I create a factor variable quality.f as a analysis metric since it is a 
+categorical variable. The levels of quality are respresnted by the original
+int. 
+
+### Of the features you investigated, were there any unusual distributions? \
+Did you perform any operations on the data to tidy, adjust, or change the form \
+of the data? If so, why did you do this?
+
+I log transformed total.sulfur.dioxide and free.sulfur.dioxide which were 
+previously right-skewed. The data after transformation is bimodal. For the free 
+sulfur dioxide, it peaks around 2.0 and 2.8, while there is a gap between 1.2
+and 1.4. For the total free dioxide, it peaks around 3.15 and 3.9 while there 
+is a gap between 5.1 and 5.7. I did this to find underlying patterns of skewed
+data. I also log-transformed alcohol, yet the distributions before and after 
+look alike. 
+
+
+# Bivariate Plots Section
+
+
+```{r echo=FALSE, Bivariate_Plots}
+cor(wine[,c(2,3,4,5,6,7,8,9,10,11,12,13)])
+
+```
+
+We see that alcohol has a moderate and positive correlation with wine. 
+
+```{r echo=FALSE, Bivariate_Plots2}
+library(GGally)
+theme_set(theme_minimal(20))
+
+set.seed(1836)
+wine_subset <- subset(wine, select = -c(X,quality.f))
+names(wine_subset)
+```
+
+We take a subset of wine excluding the the X and quality.f variables.
+
+```{r echo=FALSE, fig.width=9,fig.height=9, Bivariate_Plots3}
+ggpairs(wine_subset)+
+    theme( strip.text = element_text(size = 7),
+         axis.text = element_text(size = 7))
+```
+
+We see pH and fixed acidity have the highest negative correlation, followed
+by citric acid and fixed acidity. After some research, I found acid in wine is 
+responsible for the crisp taste. However, the acids in the data have very low
+correlation with quality. So what feature is related to high quality?
+
+```{r echo=FALSE,fig.width=9,fig.height=9,  Bivariate_Plots5}
+pairs.panels(wine_subset, 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+             )
+```
+
+After using a more clear visualization, we see alcohol has the highest 
+correlation with quality. However, the correlation 0.48 is still not high 
+enough. After research I know alcohol contributes to the flavour. Maybe the 
+level of alcohol is related to the quality of wine?
+
+```{r echo=FALSE, Bivariate_Plots6}
+ggplot(aes(x=alcohol, y=quality),data=wine)+
+  geom_jitter(alpha=0.5, width = 0, height = 0.25)
+```
+
+
+
+```{r echo=FALSE, Bivariate_Plots9}
+qplot(alcohol, quality, data= wine)+
+  scale_x_continuous(trans = "log10")+
+  geom_jitter(alpha=0.5, width = 0, height = 0.25)+
+  ggtitle('Adjusted Quality by fixed acidity(log10)')
+```
+
+The first plot shows overplotting. After adjustment by adding jitter and 
+changing transparency, we still can see that the data is over-dispersed. 
+
+```{r echo=FALSE, Bivariate_Plots10}
+ggplot(aes(x=density, y=quality),data=wine)+
+  geom_jitter(alpha=0.5, width = 0, height = 0.25)
+```
+
+
+Density distribution is similar to that of alcohol.
+
+```{r echo=FALSE, Bivariate_Plots11}
+qplot(fixed.acidity, density, data= wine)+
+  scale_y_continuous()+
+  ggtitle('Density by fixed acidity')
+```
+
+We there is a clear positive relationship between fixed.acidity and density.
+In fact, the typical concentration of fixed acid in wine is 6000 mg/L, which is
+quite big, only second to Glycerol.
+
+```{r echo=FALSE, Bivariate_Plots13}
+qplot(citric.acid , pH, data= wine)+
+  scale_y_continuous()+
+  ggtitle('pH by citric acid')
+```
+
+We can see pH is negatively related to citric acid. This no surprise since
+the higher the acid, the lower the pH.
+
+```{r echo=FALSE, Bivariate_Plots14}
+qplot(fixed.acidity , pH, data= wine)+
+  scale_y_continuous()+
+  ggtitle('pH by fixed acidity')
+```
+
+Same trend has been observed in the plot of pH vs fixed acidity.
+
+```{r echo=FALSE, Bivariate_Plots15}
+qplot(volatile.acidity , pH, data= wine)+
+  scale_y_continuous()+
+  ggtitle('pH by volatile acidity')
+```
+
+However, the trend is lost when we plot pH vs volatile acidity.\
+
+In general, We see there is a negative strong correlation between citric acid 
+and pH
+which is not surprising since the more acidic a solution is, the lower pH it 
+has. The same siuation applies to other acid metrics like fixed.acidity. 
+However, volatile acidity doesn't show such correlation.
+
+```{r echo=FALSE, Bivariate_Plots16}
+lmfit = lm(formula = quality ~ alcohol, data=wine)
+summary(lmfit)
+```
+
+We can see this refutes our previous hypothesis that alcohol is related to 
+quality since it only explains 22.63% of the variance. 
+
+```{r echo=FALSE, Bivariate_Plots19}
+
+lmfit_2 = lm(formula = quality ~ pH + fixed.acidity, data=wine)
+summary(lmfit_2)
+
+```
+Still, the pH and fixed.acidity don't explained the quality well. 
+
+```{r echo=FALSE, Bivariate_Plots20}
+p_box_pH = qplot(quality.f , pH, 
+      data= wine,
+      geom = 'boxplot')
+p_box_pH
+```
+
+
+The mean pH look similar across quality groups. However, a wine with higher quality tends to have smaller pH. 
+
+```{r echo=FALSE, Bivariate_Plots27}
+p_box_density = qplot(quality.f , density, 
+      data= wine,
+      geom = 'boxplot')
+p_box_density
+```
+
+Here we see higher quality tends to have lower density. 
+
+
+```{r echo=FALSE, Bivariate_Plots28}
+p_box_sugar = qplot(quality.f , residual.sugar, 
+      data= wine,
+      geom = 'boxplot')
+p_box_sugar
+```
+
+Here we see the medians of residual sugar are very similar across quality
+groups, yet the middle quality groups(5,6) have many outliers that drives mean
+higher than median. 
+
+```{r echo=FALSE, Bivariate_Plots29}
+p_box_total_sd = qplot(quality.f , total.sulfur.dioxide, 
+      data= wine,
+      geom = 'boxplot')
+p_box_total_sd
+```
+
+Here we see the middle quality range have higher median total sulfur dioxide. 
+
+
+
+# Bivariate Analysis
+
+### Talk about some of the relationships you observed in this part of the \
+investigation. How did the feature(s) of interest vary with other features in \
+the dataset?
+
+There are no variables that have strong correlation with win quality.
+Regardless of quality, the variance in alcohol is high in each level. 
+In the 
+plot of quality vs alcohol, at each quality level the alcohol amount is spread
+out. 
+
+Based on the R^2 value, alcohol can only explain about 22.6%, yet other variable
+such as pH did a worse job.
+
+It has been confirmed that fixed acidity and citric acid are negatively related
+to pH based on chemical domain knowledge. However, it is counterintuitive that 
+volatile acidity doesn't follow such trend and even has a positive correlation.\
+The correlation table justifies such behavior by showing that volatile acidity
+is negatively to other two acidity metrics.
+
+Density has a distribution across quality groups similar to alcohol. 
+
+### Did you observe any interesting relationships between the other features \
+(not the main feature(s) of interest)?
+
+Other interesting finding is that fixed acidity is strongly positively 
+correlated to fixed acidity, establishing an unexpected discovery.
+
+### What was the strongest relationship you found?
+
+The strongest relationship is between citric.acid and fixed.acidity. 
+
+# Multivariate Plots Section
+
+
+```{r echo=FALSE, Multivariate_Plots}
+ggplot(aes(x = fixed.acidity , y = pH, color= quality.f), data = wine) + 
+  geom_point(alpha = 0.5, size = 1, position = 'jitter') +
+  scale_color_brewer(type = 'div',
+    guide = guide_legend(title = 'Quality', reverse = T,
+    override.aes = list(alpha = 1, size = 2)))+
+  scale_x_continuous()+
+  scale_y_continuous()+
+  ggtitle('pH by fixed acidity and Quality')
+```
+
+
+We can see higher quality wine tend to stay close on the linear line.
+
+```{r echo=FALSE, Multivariate_Plots4}
+
+ggplot(wine,aes(density,pH))+
+  geom_point(aes(colour = quality.f))+
+  ggtitle('pH by density and Quality') +
+  scale_color_brewer(type = "div", palette = "RdYlBu", name="Quality")
+```
+
+
+We plot pH vs density and quality, and we can see quality is very dispersed 
+across the plot. This means certain combination of density and pH might not 
+lead to certain quality of wine. Yets we see, at similar pH, lower density has
+more lower quality wines. 
+
+
+```{r echo=FALSE, Multivariate_Plots5}
+
+ggplot(wine,aes(density,pH))+
+  geom_point(aes(colour = quality.f))+
+  scale_color_brewer(type = "div", palette = "RdYlBu", name="Quality")+
+  ggtitle('pH by density and Quality')
+```
+
+As wee see, most wine cluttered in group with density between 0.995 and 1
+and pH between 3.0 and 3.5.
+
+```{r echo=FALSE, Multivariate_Plots6}
+
+ggplot(wine,aes(density,alcohol))+
+  geom_point(aes(colour = quality.f))+
+  scale_color_brewer(type = "div", palette = "RdYlBu", name="Quality")+
+  ggtitle('Alcohol by density and Quality')
+```
+
+We see lower quality wine tends to fall in section with density between
+0.995 and 1.000 and alcohol between 9 and 10.
+
+```{r echo=FALSE, Multivariate_Plots7}
+
+ggplot(wine,aes(density,fixed.acidity))+
+  geom_point(aes(colour = quality.f))+
+  scale_color_brewer(type = "div", palette = "RdYlBu", name="Quality")+
+  ggtitle('Fixed Acidity by density and Quality')
+```
+
+As we see, wine with different are pretty dispersed across the density
+axis. 
+
+```{r echo=FALSE, Linear_Model}
+library(memisc)
+m1 <- lm(quality~alcohol, data=wine)
+m2 <- update(m1,~.+pH)
+m3 <- update(m2,~.+density)
+m4 <- update(m3,~.+fixed.acidity)
+m5 <- update(m4,~.+citric.acid)
+mtable(m1,m2,m3,m4,m5)
+```
+
+We made a linear model to predict quality based on the most related features
+we have. However, none of them explains the variance of quality well.
+
+### From the linear model, we can see as we add more variables, the R^2 don't \
+change much, which means the model doesn't explain the variance in quality well.
+
+# Multivariate Analysis
+
+### Talk about some of the relationships you observed in this part of the \
+investigation. Were there features that strengthened each other in terms of 
+looking at your feature(s) of interest?
+
+* There is no single clear relationship that explains what makes a wine have a
+good quality. Yet there is a pattern that lower quality wine tends to fall
+in section with density between 0.995 and 1.000 and alcohol between 9 and 10.
+
+* Through multivariate plot, we can see density and fixed density strengthened
+each other. Across all quality groups, higher density is related to higher
+fixed acidity, which makes sense because the more stable acid stays in wine,
+the more dense it is. 
+
+### Were there any interesting or surprising interactions between features?
+One interesting interaction is the plot of pH vs density with color of quality
+since I expected that certain combination of pH and density would contribute
+to a quality of wine. However, quality is pretty dispersed across the plot.
+
+### OPTIONAL: Did you create any models with your dataset? Discuss the \
+strengths and limitations of your model.
+
+I create a linear model to predict quality. However, the highest R^2 is only
+0.264, which means linear model might not be a good metrics for predicting
+the quality of wine. However, some useful information can be fetched. Among
+all the features in the model, pH improves the model by the most extent. 
+------
+
+# Final Plots and Summary
+
+
+
+### Plot One
+
+```{r echo=FALSE, Plot_One}
+qplot(x=log(total.sulfur.dioxide+1), data=wine,binwidth=0.25)+
+  scale_x_continuous(limits = c(0,6), breaks= seq(0,6,0.5))+
+  ggtitle("Log_10 Total Sulfur Dioxide")
+```
+
+
+### Description One
+
+The distribution of total sulfur dioxide appears to be bimodal on log scale.\
+Perhaps, wines are divided into two ranges to sulfur dioxide amount. There is
+also an gap in the upper range between 5 and 5.5.
+
+### Plot Two
+```{r echo=FALSE, Plot_Two}
+qplot(fixed.acidity, density, data= wine)+
+  scale_y_continuous()+
+  ggtitle('Density by fixed acidity')
+```
+
+### Description Two
+
+We see that fixed.acidity has a moderate positive relationship between density.
+This raises interesting questions about what determines the density of a wine.
+Fixed.acidity might be a good component.
+
+### Plot Three
+```{r echo=FALSE, Plot_Three}
+ggplot(wine,aes(density,alcohol))+
+  geom_point(aes(colour = quality.f))+
+  scale_color_brewer(type = "div", palette = "RdYlBu", name="Quality")+
+  ylab(expression('Alcohol (% by Volume)')) +
+  xlab(Density~(g/cm^{3}))+
+  ggtitle('Alcohol by density and Quality')
+```
+
+### Description Three
+We see lower quality wine tends to fall in section with density between
+0.995 and 1.000 and alcohol between 9 and 10. This means low quality wine
+could be associated with high density and low alcohol. This points to an
+interesting speculation that high density might contain other unnecessary
+chemicals without the presence of high alcohol.
+------
+
+# Reflection
+
+Given that I already learned R in school, I didn't find much trouble getting 
+used to the syntax. However, I had moments struggling with choosing what plots 
+to use, how to understand what makes a wine high quality. I also found it 
+difficult to design the plots to emphasize certain patterns in the data.\
+There are many interetsing insights found in the exploration. For instances,
+the fixed.acidity is positively related to citric acid, yet negatively
+related to volatile acid. Both fixed and citric acid are negatively
+related to pH. Moreover, fixed acid is closely related to density. The 
+higher the fixed acid, the higher the density. \ 
+However, I have trouble
+finding a variable that is closely related to quality even after log
+transformation. Yet I still find that low quality wine is associated with
+low alcohol and high density. Further exploration might need bigger dataset
+with more features to study what makes a good wine. For example, does other
+substance like Glycerol or Amino Acids contribute to the quality. Moreover, 
+does certain ratio of substance like sugar and fixed acid ratio have high 
+correlation with the quality of wine? 
+
